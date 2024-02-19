@@ -1,13 +1,8 @@
 [project]
 name = "sahkon-hinta"
 version = "0.1.0"
-authors = [
-    { name = "elias-ka", email = "48407293+elias-ka@users.noreply.github.com" },
-]
-dependencies = [
-    "playwright>=1.41.2",
-    "rich>=13.7.0",
-]
+authors = [{ name = "elias-ka" }]
+dependencies = ["playwright>=1.41.2", "rich>=13.7.0"]
 requires-python = ">=3.10"
 readme = "README.md"
 license = { text = "MIT" }
