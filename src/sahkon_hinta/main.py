@@ -1,59 +1,99 @@
 from __future__ import annotations
 
+import datetime
+import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 from playwright.async_api import Page, async_playwright
 from rich.console import Console
 from rich.table import Table
 
-sahko_tk_url = "https://sahko.tk/"
+SAHKO_TK_URL = "https://sahko.tk/"
+CACHE_FILE = "sahkon_hinta_cache.json"
 
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class Price:
+class Prices:
     price_now: str
     day_low: str
     day_high: str
     seven_day_avg: str
     twentyeight_day_avg: str
     vat: str
+    timestamp: str
 
-    @classmethod
-    async def from_page(cls, page: Page) -> Price:
+    def save_to_cache(self):
+        file = Path(CACHE_FILE).resolve()
+        file.touch(exist_ok=True)
+        file.write_text(json.dumps(self.__dict__, indent=2))
+
+    @staticmethod
+    async def from_page(page: Page) -> Prices:
         async def get_text(selector: str) -> str:
             return (await page.inner_text(selector)).replace(" snt/kWh", "")
 
-        return Price(
+        vat = (
+            await page.inner_text("ul.nav-pills.nav-justified li.nav-item a.active")
+        ).split(" ")[-3]
+
+        return Prices(
             price_now=await get_text("span#price_now"),
             day_low=await get_text("span#min_price"),
             day_high=await get_text("span#max_price"),
             seven_day_avg=await get_text("span#avg"),
             twentyeight_day_avg=await get_text("span#avg_28"),
-            vat=await cls._get_vat(page),
+            vat=vat,
+            timestamp=datetime.datetime.now().isoformat(),
         )
 
     @staticmethod
-    async def _get_vat(page: Page) -> str:
-        text = await page.inner_text("ul.nav-pills.nav-justified li.nav-item a.active")
-        return text.split(" ")[-3]
+    def from_json(data: str) -> Prices:
+        return Prices(**json.loads(data))
 
 
-async def main():
+async def fetch_prices_and_update_cache() -> Prices:
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            await page.goto(sahko_tk_url)
-            prices = await Price.from_page(page)
+            await page.goto(SAHKO_TK_URL)
+            prices = await Prices.from_page(page)
+            prices.save_to_cache()
             await browser.close()
+            return prices
     except Exception as e:
         logger.error(f"Tapahtui virhe: {e}", exc_info=True)
-        return
+        raise e
 
+
+def load_cached_prices() -> Prices | None:
+    try:
+        file = Path(CACHE_FILE).resolve(strict=True)
+        return Prices.from_json(file.read_text())
+    except FileNotFoundError:
+        return None
+
+
+async def get_prices() -> Prices:
+    # the headless browser is slow to start and the prices are updated
+    # every day around 1:45 PM finnish time, so we can cache the prices
+    if (cached := load_cached_prices()) is not None:
+        last_cached = datetime.datetime.fromisoformat(cached.timestamp)
+        now = datetime.datetime.now()
+        if (now.hour, now.minute) >= (13, 45) and now.date() != last_cached.date():
+            return await fetch_prices_and_update_cache()
+        else:
+            return cached
+    return await fetch_prices_and_update_cache()
+
+
+async def main():
+    prices = await get_prices()
     table = Table(
         title=f"Sähkön hinta (snt/kWh) {prices.vat}% alv",
         caption="Lähde: sahko.tk",
