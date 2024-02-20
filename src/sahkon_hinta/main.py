@@ -42,7 +42,7 @@ class Price:
         return text.split(" ")[-3]
 
 
-async def main():
+async def run() -> None:
     try:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
@@ -78,7 +78,11 @@ async def main():
     console.print(table)
 
 
-if __name__ == "__main__":
+def main() -> None:
     import asyncio
 
-    asyncio.run(main())
+    asyncio.run(run())
+
+
+if __name__ == "__main__":
+    main()

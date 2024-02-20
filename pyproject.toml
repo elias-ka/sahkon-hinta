@@ -1,15 +1,42 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
 [project]
 name = "sahkon-hinta"
-version = "0.1.0"
+version = "1.0.2"
+description = "A CLI tool to get the current electricity price in Finland using sahko.tk"
 authors = [{ name = "elias-ka" }]
 dependencies = ["playwright>=1.41.2", "rich>=13.7.0"]
 requires-python = ">=3.10"
 readme = "README.md"
-license = { text = "MIT" }
+keywords = [
+    "electricity",
+    "price",
+    "finland",
+    "sähkö",
+    "hinta",
+    "sähkön hinta",
+    "sahko.tk",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: Utilities",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: The Unlicense (Unlicense)",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 
+]
+
+[project.scripts]
+sahkon-hinta = "sahkon_hinta.main:main"
 
 [tool.pdm]
-distribution = false
+distribution = true
 
 [tool.pdm.dev-dependencies]
 lint = ["mypy>=1.8.0", "ruff>=0.2.2"]
