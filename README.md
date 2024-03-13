@@ -1,7 +1,5 @@
 # sahkon-hinta
 
-A simple CLI tool to fetch the current electricity price in Finland, using the data from [sahko.tk](https://sahko.tk/).
-
 The program uses [Playwright](https://playwright.dev/python/) to spin up a headless browser and fetch the data from the website. The data is then parsed and printed to the console in a nice format.
 
 Done as a part of a Cloud Services course at the Oulu University of Applied Sciences.
